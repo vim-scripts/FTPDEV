@@ -1,0 +1,96 @@
+*ftpdev.txt* 			For Vim version 7	Last change: 13 November 2010
+
+		    A help file for <F>ile <T>ype <P>lugin <DEV>elopemnt  (ver 1)
+				by Marcin Szamotulski
+			    mszamot [AT] gmail [DOT] com
+			----------------------------------------
+
+This file type plugin provides some additional functions and commands which
+help writing and vim plugins. Especialy big ones. Here is the list of
+available commands and maps with some explanation:
+
+							|vimvim-g:ftplugin_dir|
+There is one variable which needs to be configured >
+ g:ftplugin_dir
+< This is the directory which will be searched for files. If you set this to
+your ~/.vim/ftplugin directory where you have lots of scripts this plugin
+might be a bit slow. Each plugin that I develop has its own directory (you
+probably use some version control system as I do) then this vairable is set
+in my vimrc file via an autocommand: >
+	au BufEnter /some_directory/*.vim	let g:ftplugin=<value>
+<
+
+:Function[!] {fname}					*vimvim-:Function*
+	This finds function with name mathcing {fname} vim pattern under the
+	|vimvim-g:ftplugin_dir| directory. It uses the internal grep, i.e.
+	|vimgrep|. {fname} should be as the first argument of |vimgrep| except
+	it doesn't have to be put between /.../ .
+
+	{fname} can not begin with <SID> or 's:' even if the function name has
+	it.
+
+	The bang vimgrep is supplied with the j switch, i.e. only quickfix
+	list will be filled with mathes.
+:Command[!] {cname}					*vimvim-:Command*
+	This finds command which name matches {fname} vim pattern under the
+	|vimvim-g:ftplugin_dir| {cname> has the same syntax as {fname}. The
+	bang works as in |vimvim-:Function|
+:Variable[!] {vname}					*vimvim-:Variable*
+	This finds variable definition mathing {vname}. {vname} has to contain
+	the g: b: s: t: prefix if the variable has it. The bang works as in
+	|vimvim-:Function|
+
+:Map[!] {maplhs}					*vimvim-:Map*
+	This finds maps which lhs matches {maplhs} vim pattern. The bang works as in
+	|vimvim-:Function|
+
+:S /{pattern}/
+	This function make a search of {pattern} in the current function (it
+	can wrap around the end of function. The argument {pattern} is a vim
+	pattern passed to |vimgrep|.
+
+:PluginDir {directory}	
+	This sets the variable |vimvim-g:ftplugin_dir|. It has dir type
+	completion.
+
+:Pgrep /{pattern}/[j][g]
+	This makes |vimgrep| in all files '*.vim' under |vimvim-g:ftplugin_dir|.
+	The argument syntax is the same as for |vimgrep|.
+	
+
+Remember: Vim has its own vim.vim ftplugin which defines: 
+	]] 	(next begining of a function), 
+	][ 	(next end of a function), 
+	[[ 	(previous begining of a function), 
+	[] 	(previous end of a function).
+	
+
+Happy viming :)	
+
+================================================================================
+COPY RIGHTS							*vimvim-copy-rights*
+
+
+    Copyright (C) 2010 Marcin Szamotulski Permission is hereby granted to use
+    and distribute this code, with or without modifications, provided that
+    this copyright notice is copied with it. 
+
+    FTPDEV filetype plugin for Vim is free software: you can redistribute it
+    and/or modify it under the terms of the GNU General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+ 
+    FTPDEV filetype plugin for Vim is distributed in the hope that it will be
+    useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+    Public License for more details.
+ 
+    You should have received a copy of the GNU General Public License along
+    with FTPDEV filetype plugin for Vim.  If not, see <http://www.gnu.org/licenses/>.
+
+    This licence applies to all files shipped with FTPDEV filetype plugin.
+
+
+
+
+" vim:tw=75:ts=8:ft=help:norl:
