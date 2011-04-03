@@ -9,7 +9,19 @@ This file type plugin provides some additional functions and commands which
 help writing and vim plugins. Especialy big ones. Here is the list of
 available commands and maps with some explanation:
 
-							|vimvim-g:ftplugin_dir|
+NEWS							*ftpdev-news*	
+
+In the version 2 of thus plugin you get:
+    map gn
+    man gN
+	    maps to search in the current function for the last search pattern @/.
+	    They work like |n| and |N|.
+
+    The messages for this search are now visibe.
+
+    GetLatestVimScript support added.
+
+							|ftpdev-g:ftplugin_dir|
 There is one variable which needs to be configured >
  g:ftplugin_dir
 < This is the directory which will be searched for files. If you set this to
@@ -20,9 +32,9 @@ in my vimrc file via an autocommand: >
 	au BufEnter /some_directory/*.vim	let g:ftplugin=<value>
 <
 
-:Function[!] {fname}					*vimvim-:Function*
+:Function[!] {fname}					*ftpdev-:Function*
 	This finds function with name mathcing {fname} vim pattern under the
-	|vimvim-g:ftplugin_dir| directory. It uses the internal grep, i.e.
+	|ftpdev-g:ftplugin_dir| directory. It uses the internal grep, i.e.
 	|vimgrep|. {fname} should be as the first argument of |vimgrep| except
 	it doesn't have to be put between /.../ .
 
@@ -31,30 +43,36 @@ in my vimrc file via an autocommand: >
 
 	The bang vimgrep is supplied with the j switch, i.e. only quickfix
 	list will be filled with mathes.
-:Command[!] {cname}					*vimvim-:Command*
+:Command[!] {cname}					*ftpdev-:Command*
 	This finds command which name matches {fname} vim pattern under the
-	|vimvim-g:ftplugin_dir| {cname> has the same syntax as {fname}. The
-	bang works as in |vimvim-:Function|
-:Variable[!] {vname}					*vimvim-:Variable*
+	|ftpdev-g:ftplugin_dir| {cname> has the same syntax as {fname}. The
+	bang works as in |ftpdev-:Function|
+:Variable[!] {vname}					*ftpdev-:Variable*
 	This finds variable definition mathing {vname}. {vname} has to contain
 	the g: b: s: t: prefix if the variable has it. The bang works as in
-	|vimvim-:Function|
+	|ftpdev-:Function|
 
-:Map[!] {maplhs}					*vimvim-:Map*
+:Map[!] {maplhs}					*ftpdev-:Map*
 	This finds maps which lhs matches {maplhs} vim pattern. The bang works as in
-	|vimvim-:Function|
+	|ftpdev-:Function|
 
 :S /{pattern}/
+map gn
+map gN
 	This function make a search of {pattern} in the current function (it
 	can wrap around the end of function. The argument {pattern} is a vim
 	pattern passed to |vimgrep|.
 
+	The pattern is added to search history and copied to the @/ register,
+	thus you can re use it with |n| and |N| commands to search globaly or
+	gn and gN to search in the scope of current function.
+
 :PluginDir {directory}	
-	This sets the variable |vimvim-g:ftplugin_dir|. It has dir type
+	This sets the variable |ftpdev-g:ftplugin_dir|. It has dir type
 	completion.
 
 :Pgrep /{pattern}/[j][g]
-	This makes |vimgrep| in all files '*.vim' under |vimvim-g:ftplugin_dir|.
+	This makes |vimgrep| in all files '*.vim' under |ftpdev-g:ftplugin_dir|.
 	The argument syntax is the same as for |vimgrep|.
 	
 
@@ -68,7 +86,7 @@ Remember: Vim has its own vim.vim ftplugin which defines:
 Happy viming :)	
 
 ================================================================================
-COPY RIGHTS							*vimvim-copy-rights*
+COPY RIGHTS							*ftpdev-copy-rights*
 
 
     Copyright (C) 2010 Marcin Szamotulski Permission is hereby granted to use
