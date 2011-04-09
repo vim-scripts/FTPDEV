@@ -1,6 +1,6 @@
-*ftpdev.txt* 			For Vim version 7	Last change: 13 November 2010
+*ftpdev.txt* 			For Vim version 7	Last change: 9 April 2011
 
-		    A help file for <F>ile <T>ype <P>lugin <DEV>elopemnt  (ver 1)
+		    A help file for <F>ile <T>ype <P>lugin <DEV>elopemnt  (ver 3)
 				by Marcin Szamotulski
 			    mszamot [AT] gmail [DOT] com
 			----------------------------------------
@@ -11,6 +11,26 @@ available commands and maps with some explanation:
 
 NEWS							*ftpdev-news*	
 
+>
+ version 3
+<
+In the version 3 there are two new commands:
+:ListFunctions
+:ListCommands
+	They list functions and commands defined in the current file. 
+
+:Function {function-name}
+	Has completion for names of functions found in the project.
+:Commands {command-name}
+	Has completion for names of commands found in the project.
+
+	Both completions add \> at the end of the function/command name to
+	make the match exact. This is done by completion function and not,
+	silently, by the commands (this makes a difference).
+	
+>
+ version 2
+<
 In the version 2 of thus plugin you get:
     map gn
     man gN
@@ -43,10 +63,16 @@ in my vimrc file via an autocommand: >
 
 	The bang vimgrep is supplied with the j switch, i.e. only quickfix
 	list will be filled with mathes.
+
+	There is completion for {fname}s.
+
 :Command[!] {cname}					*ftpdev-:Command*
 	This finds command which name matches {fname} vim pattern under the
 	|ftpdev-g:ftplugin_dir| {cname> has the same syntax as {fname}. The
 	bang works as in |ftpdev-:Function|
+
+	There is completion for {cname}s.
+
 :Variable[!] {vname}					*ftpdev-:Variable*
 	This finds variable definition mathing {vname}. {vname} has to contain
 	the g: b: s: t: prefix if the variable has it. The bang works as in
@@ -56,6 +82,9 @@ in my vimrc file via an autocommand: >
 	This finds maps which lhs matches {maplhs} vim pattern. The bang works as in
 	|ftpdev-:Function|
 
+							*ftpdev-gn*
+							*ftpdev-gN*
+							*ftpdev-:S*
 :S /{pattern}/
 map gn
 map gN
@@ -67,10 +96,15 @@ map gN
 	thus you can re use it with |n| and |N| commands to search globaly or
 	gn and gN to search in the scope of current function.
 
+	Note that you can first search with the vim standard |/| or |?| and
+	then use |ftpdev-gn| and |ftpdev-gN|.
+
+							*ftpdev-:PluginDir*
 :PluginDir {directory}	
 	This sets the variable |ftpdev-g:ftplugin_dir|. It has dir type
 	completion.
 
+							*ftpdev-:Pgrep*
 :Pgrep /{pattern}/[j][g]
 	This makes |vimgrep| in all files '*.vim' under |ftpdev-g:ftplugin_dir|.
 	The argument syntax is the same as for |vimgrep|.

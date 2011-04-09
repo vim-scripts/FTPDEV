@@ -27,9 +27,9 @@ try
 function! Goto(what,bang,...)
     let grep_flag = ( a:bang == "!" ? 'j' : '' )
     if a:what == 'function'
-	let pattern		= '^\s*fu\%[nction]!\=\s\+\%(s:\|<SID>\)\=' .  ( a:0 >=  1 ? a:1 : '' )
+	let pattern		= '^\s*fu\%[nction]!\=\s\+\%(s:\|<\csid>\)\=' .  ( a:0 >=  1 ? a:1 : '' )
     elseif a:what == 'command'
-	let pattern		= '^\s*com\%[mand]!\=\s\+.*\s*' .  ( a:0 >=  1 ? a:1 : '' )
+	let pattern		= '^\s*com\%[mand]!\=\(\s*-buffer\s*\|\s*-nargs=[01*?+]\s*\|\s*-complete=\S\+\s*\|\s*-bang\s*\|\s*-range=\=[\d%]*\s*\|\s*-count=\d\+\s*\|\s*-bar\s*\|\s*-register\s*\)*\s*'.( a:0 >= 1 ? a:1 : '' )
     elseif a:what == 'variable'
 	let pattern 		= '^\s*let\s\+' . ( a:0 >=  1 ? a:1 : '' )
     elseif a:what == 'map'
@@ -43,7 +43,7 @@ function! Goto(what,bang,...)
 
     let error = 0
     try
-	exe 'vimgrep /'.pattern.'/' . grep_flag . ' ' . filename
+	exe 'silent! vimgrep /'.pattern.'/' . grep_flag . ' ' . filename
     catch /E480:/
 	echoerr 'E480: No match: ' . pattern
 	let error = 1
@@ -57,8 +57,30 @@ catch /E127/
 endtry
 " Completion is not working for a very simple reason: we are edditing a vim
 " script which might not be sourced.
-command! -buffer -bang -nargs=? -complete=function Function 	:call Goto('function', <q-bang>, <q-args>) 
-command! -buffer -bang -nargs=? -complete=command Command 	:call Goto('command', <q-bang>, <q-args>) 
+command! -buffer -bang -nargs=? -complete=custom,FuncCompl Function 	:call Goto('function', <q-bang>, <q-args>) 
+function! FuncCompl(A,B,C)
+    let saved_loclist=getloclist(0)
+    let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
+    exe 'lvimgrep /^\s*fun\%[ction]/gj '.filename
+    let loclist = getloclist(0)
+    call setloclist(0, saved_loclist)
+    call map(loclist, 'get(v:val, "text", "")')  
+    call map(loclist, 'matchstr(v:val, ''^\s*fun\%[ction]!\=\s*\(<\csid>\|\cs:\)\=\zs.*\ze\s*('')')
+    call map(loclist, 'v:val.''\>''')
+    return join(loclist, "\n")
+endfunction
+function! CommandCompl(A,B,C)
+    let saved_loclist=getloclist(0)
+    let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
+    exe 'lvimgrep /^\s*com\%[mand]/gj '.filename
+    let loclist = getloclist(0)
+    call setloclist(0, saved_loclist)
+    call map(loclist, 'get(v:val, "text", "")')  
+    call map(loclist, 'matchstr(v:val, ''^\s*com\%[mand]!\=\(\s*-buffer\s*\|\s*-nargs=[01*?+]\s*\|\s*-complete=\S\+\s*\|\s*-bang\s*\|\s*-range=\=[\d%]*\s*\|\s*-count=\d\+\s*\|\s*-bar\s*\|\s*-register\s*\)*\s*\zs\w*\>\ze'')')
+    call map(loclist, 'v:val.''\>''')
+    return join(loclist, "\n")
+endfunction
+command! -buffer -bang -nargs=? -complete=custom,CommandCompl Command 	:call Goto('command', <q-bang>, <q-args>) 
 command! -buffer -bang -nargs=? -complete=var Variable 		:call Goto('variable', <q-bang>, <q-args>) 
 command! -buffer -bang -nargs=? -complete=mapping Map 		:call Goto('map', <q-bang>, <q-args>) 
 
@@ -160,3 +182,66 @@ endfunction
 catch /E127:/
 endtry
 command! -nargs=1 Pgrep		:call Pgrep(<q-args>)
+
+function! ListFunctions(bang)
+    lvimgrep /^\s*fun\%[ction]/gj %
+    let loclist = getloclist(0)
+    call map(loclist, 'get(v:val, "text", "")')  
+    call map(loclist, 'matchstr(v:val, ''^\s*fun\%[ction]!\=\s*\zs.*\ze\s*('')')
+    if a:bang == "!"
+	call sort(loclist)
+    endif
+    return join(<SID>PrintTable(loclist, 2), "\n")
+endfunction
+command! -bang ListFunctions 	:echo ListFunctions(<q-bang>)
+
+function! ListCommands(bang)
+    lvimgrep /^\s*com\%[mmand]/gj %
+    let loclist = getloclist(0)
+    call map(loclist, 'get(v:val, "text", "")')  
+    call map(loclist, 'substitute(v:val, ''^\s*'', '''', '''')')
+    if a:bang == "!"
+	call sort(loclist)
+    endif
+    return join(loclist, "\n")
+endfunction
+command! -bang ListCommands 	:echo ListCommands(<q-bang>)
+" Print table tools:
+" {{{
+function! <SID>FormatListinColumns(list,s)
+    " take a list and reformat it into many columns
+    " a:s is the number of spaces between columns
+    " for example of usage see atplib#PrintTable
+    let max_len=max(map(copy(a:list), 'len(v:val)'))
+"     let g:list=a:list
+"     let g:max_len=max_len+a:s
+    let new_list=[]
+    let k=&l:columns/(max_len+a:s)
+"     let g:k=k
+    let len=len(a:list)
+    let column_len=len/k
+    for i in range(0, column_len)
+	let entry=[]
+	for j in range(0,k)
+	    call add(entry, get(a:list, i+j*(column_len+1), ""))
+	endfor
+	call add(new_list,entry)
+    endfor
+    return new_list
+endfunction 
+" Take list format it with atplib#FormatListinColumns and then with
+" atplib#Table (which makes columns of equal width)
+function! <SID>PrintTable(list, spaces)
+    " a:list 	- list to print
+    " a:spaces 	- nr of spaces between columns 
+
+    let list = atplib#FormatListinColumns(a:list, a:spaces)
+    let nr_of_columns = max(map(copy(list), 'len(v:val)'))
+    let spaces_list = ( nr_of_columns == 1 ? [0] : map(range(1,nr_of_columns-1), 'a:spaces') )
+
+    let g:spaces_list=spaces_list
+    let g:nr_of_columns=nr_of_columns
+    
+    return atplib#Table(list, spaces_list)
+endfunction
+"}}}
