@@ -1,4 +1,5 @@
 " Title:  Vim filetype plugin file
+" :
 " Author: Marcin Szamotulski
 " Email:  mszamot [AT] gmail [DOT] com
 " Last Change:
@@ -25,21 +26,33 @@ if !exists("g:ftplugin_dir")
 endif
 try
 function! Goto(what,bang,...)
+    let g:a	= (a:0 >= 1 ? a:1 : "")
+    let pattern = (a:0 >= 1 ? 
+		\ (a:1 =~ '.*\ze\s\+\d\+$' ? matchstr(a:1, '.*\ze\s\+\d\+$') : a:1)
+		\ : 'no_arg') 
+    let line	= (a:0 >= 1 ? 
+		\ (a:1 =~ '.*\ze\s\+\d\+$' ? matchstr(a:1, '.*\s\+\zs\d\+$') : 0) 
+		\ : 0)
+    	let g:pattern_arg 	= pattern
+	let g:line_arg		= line
+    " Go to a:2 lines below
+    let g:line = line
     let grep_flag = ( a:bang == "!" ? 'j' : '' )
     if a:what == 'function'
-	let pattern		= '^\s*fu\%[nction]!\=\s\+\%(s:\|<\csid>\)\=' .  ( a:0 >=  1 ? a:1 : '' )
+	let pattern		= '^\s*fu\%[nction]!\=\s\+\%(s:\|<\csid>\)\=' .  ( a:0 >=  1 ? pattern : '' )
     elseif a:what == 'command'
-	let pattern		= '^\s*com\%[mand]!\=\(\s*-buffer\s*\|\s*-nargs=[01*?+]\s*\|\s*-complete=\S\+\s*\|\s*-bang\s*\|\s*-range=\=[\d%]*\s*\|\s*-count=\d\+\s*\|\s*-bar\s*\|\s*-register\s*\)*\s*'.( a:0 >= 1 ? a:1 : '' )
+	let pattern		= '^\s*com\%[mand]!\=\%(\s*-buffer\s*\|\s*-nargs=[01*?+]\s*\|\s*-complete=\S\+\s*\|\s*-bang\s*\|\s*-range=\=[\d%]*\s*\|\s*-count=\d\+\s*\|\s*-bar\s*\|\s*-register\s*\)*\s*'.( a:0 >= 1 ? pattern : '' )
     elseif a:what == 'variable'
-	let pattern 		= '^\s*let\s\+' . ( a:0 >=  1 ? a:1 : '' )
-    elseif a:what == 'map'
-	let pattern		= '^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>.*' . ( a:0 >= 1 ? a:1 : '' )
+	let pattern 		= '^\s*let\s\+' . ( a:0 >=  1 ? pattern : '' )
+    elseif a:what == 'maplhs'
+	let pattern		= '^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>\s\+\%(\%(<buffer>\|<silent>\|<unique>\|<expr>\)\s*\)*\(<plug>\)\=' . ( a:0 >= 1 ? pattern : '' )
+    elseif a:what == 'maprhs'
+	let pattern		= '^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>\s+\%(\%(<buffer>\|<silent>\|<unique>\|<expr>\)\s*\)*\s\+\<\S\+\>\s\+\%(<plug>\)\=' . ( a:0 >= 1 ? pattern : '' )
     else
-	let pattern 		= '^\s*[ci]\=\%(\%(nore\|un\)a\%[bbrev]\|ab\%[breviate]\)' . ( a:0 >= 1 ? a:1 : '' )
+	let pattern 		= '^\s*[ci]\=\%(\%(nore\|un\)a\%[bbrev]\|ab\%[breviate]\)' . ( a:0 >= 1 ? pattern : '' )
     endif
-	let g:pattern	= pattern
-    let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
-	let g:filename 	= filename
+    let g:pattern		= pattern
+    let filename		= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
 
     let error = 0
     try
@@ -48,9 +61,18 @@ function! Goto(what,bang,...)
 	echoerr 'E480: No match: ' . pattern
 	let error = 1
     endtry
+
+    if len(getqflist()) >= 2
+	clist
+    endif
     if !error
 	exe 'silent! normal zO'
 	exe 'normal zt'
+    endif
+
+    " Goto lines below
+    if line
+	exe "normal ".line."j"
     endif
 endfunction
 catch /E127/
@@ -80,9 +102,33 @@ function! CommandCompl(A,B,C)
     call map(loclist, 'v:val.''\>''')
     return join(loclist, "\n")
 endfunction
+function! MapRhsCompl(A,B,C)
+    let saved_loclist=getloclist(0)
+    let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
+    exe 'lvimgrep /^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>/gj '.filename
+    let loclist = getloclist(0)
+    call setloclist(0, saved_loclist)
+    call map(loclist, 'get(v:val, "text", "")')  
+    call map(loclist, 'matchstr(v:val, ''^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>\s\+\%(\%(<buffer>\|<silent>\|<unique>\|<expr>\)\s*\)*\(<plug>\)\=\zs.*'')')
+    call map(loclist, 'matchstr(v:val, ''\S\+\s\+\zs.*'')')
+    call map(loclist, 'escape(v:val, "[]")')
+    return join(loclist, "\n")
+endfunction
+function! MapLhsCompl(A,B,C)
+    let saved_loclist=getloclist(0)
+    let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
+    exe 'lvimgrep /^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>/gj '.filename
+    let loclist = getloclist(0)
+    call setloclist(0, saved_loclist)
+    call map(loclist, 'get(v:val, "text", "")')  
+    call map(loclist, 'matchstr(v:val, ''^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>\s\+\%(\%(<buffer>\|<silent>\|<unique>\|<expr>\)\s*\)*\(<plug>\)\=\zs\S*\ze'')')
+    call map(loclist, 'escape(v:val, "[]")')
+    return join(loclist, "\n")
+endfunction
 command! -buffer -bang -nargs=? -complete=custom,CommandCompl Command 	:call Goto('command', <q-bang>, <q-args>) 
-command! -buffer -bang -nargs=? -complete=var Variable 		:call Goto('variable', <q-bang>, <q-args>) 
-command! -buffer -bang -nargs=? -complete=mapping Map 		:call Goto('map', <q-bang>, <q-args>) 
+command! -buffer -bang -nargs=?  			Variable 	:call Goto('variable', <q-bang>, <q-args>) 
+command! -buffer -bang -nargs=? -complete=custom,MapLhsCompl MapLhs 		:call Goto('maplhs', <q-bang>, <q-args>) 
+command! -buffer -bang -nargs=? -complete=custom,MapRhsCompl MapRhs 		:call Goto('maprhs', <q-bang>, <q-args>) 
 
 " Search in current function
 function! SearchInFunction(pattern, flag) 
@@ -206,6 +252,37 @@ function! ListCommands(bang)
     return join(loclist, "\n")
 endfunction
 command! -bang ListCommands 	:echo ListCommands(<q-bang>)
+
+try
+function! Edit(file)
+    let files = split(globpath(g:ftplugin_dir, '**/'.a:file), "\n")
+    let g:files=copy(files)
+    if len(files) == 1
+	execute "edit ".files[0]
+    else
+	let files_s = []
+	let i=1
+	for file in files 	
+	    add(files_s, i.". ".files)
+	endfor
+	let input = inputlist(['Which file to edit? write number and hit <enter>, nothing to exit ']+files_s)
+	if input >= 1 && input <= len(files)
+	    execute "edit ".files[input-1]
+	endif
+    endif
+endfunction
+catch E127:
+endtry
+function! EditCompl(A,B,C)
+    let list=split(globpath(g:ftplugin_dir, "**"), "\n")
+    call map(list, 'fnamemodify(v:val, ":t")')
+    return join(list, "\n")
+endfunction
+command! -nargs=1 -complete=custom,EditCompl Edit	:call Edit(<q-args>)
+
+nmap	in	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
+nmap	iN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
+
 " Print table tools:
 " {{{
 function! <SID>FormatListinColumns(list,s)

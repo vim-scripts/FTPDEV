@@ -12,6 +12,18 @@ available commands and maps with some explanation:
 NEWS							*ftpdev-news*	
 
 >
+ version 4
+<
+ :Map command is now splitted into two commands: |ftpdev-:MapLhs| and
+ |ftpdev-:MapRhs| to match for left/right hand side of a map. Both have
+ completion for arguments.
+
+ With command |ftpdev-:Function|, |ftpdev-:Command|, |ftpdev-:MapLhs|,
+ |ftpdev-:MapRhs|  you can specify additional argument to which line of the
+ function goto. If there are more than one result they are printed. This is
+ particularly useful when debugging a script and you got an error in function
+ at a given line.
+>
  version 3
 <
 In the version 3 there are two new commands:
@@ -27,6 +39,15 @@ In the version 3 there are two new commands:
 	Both completions add \> at the end of the function/command name to
 	make the match exact. This is done by completion function and not,
 	silently, by the commands (this makes a difference).
+
+nmap in
+nmap iN
+	Goto next/previous if/else/elseif/endif pair (this, unlike |n| and |N|
+	vim maps, doesn't depend on v:searchforward). These maps are defined
+	by: >
+ nmap	in	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
+ nmap	iN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
+<	
 	
 >
  version 2
@@ -47,13 +68,13 @@ There is one variable which needs to be configured >
 < This is the directory which will be searched for files. If you set this to
 your ~/.vim/ftplugin directory where you have lots of scripts this plugin
 might be a bit slow. Each plugin that I develop has its own directory (you
-probably use some version control system as I do) then this vairable is set
+probably use some version control system as I do) then this variable is set
 in my vimrc file via an autocommand: >
 	au BufEnter /some_directory/*.vim	let g:ftplugin=<value>
 <
 
-:Function[!] {fname}					*ftpdev-:Function*
-	This finds function with name mathcing {fname} vim pattern under the
+:Function[!] {fname} [line]				*ftpdev-:Function*
+	This finds function with name matching {fname} vim pattern under the
 	|ftpdev-g:ftplugin_dir| directory. It uses the internal grep, i.e.
 	|vimgrep|. {fname} should be as the first argument of |vimgrep| except
 	it doesn't have to be put between /.../ .
@@ -62,26 +83,37 @@ in my vimrc file via an autocommand: >
 	it.
 
 	The bang vimgrep is supplied with the j switch, i.e. only quickfix
-	list will be filled with mathes.
+	list will be filled with matches.
 
 	There is completion for {fname}s.
 
-:Command[!] {cname}					*ftpdev-:Command*
+	If [line] is non zero, go [lines] below. This is especially useful
+	when you are debugging a script and you got en error in function
+	{fname} at line [line].
+
+:Command[!] {cname} [line]				*ftpdev-:Command*
 	This finds command which name matches {fname} vim pattern under the
 	|ftpdev-g:ftplugin_dir| {cname> has the same syntax as {fname}. The
 	bang works as in |ftpdev-:Function|
 
 	There is completion for {cname}s.
+	The [line] argument is the same as in |ftpdev-:Function|.
 
-:Variable[!] {vname}					*ftpdev-:Variable*
-	This finds variable definition mathing {vname}. {vname} has to contain
+:Variable[!] {vname} [line]				*ftpdev-:Variable*
+	This finds variable definition matching {vname}. {vname} has to contain
 	the g: b: s: t: prefix if the variable has it. The bang works as in
 	|ftpdev-:Function|
+	The [line] argument is the same as in |ftpdev-:Function|.
 
-:Map[!] {maplhs}					*ftpdev-:Map*
+:MapLhs[!] {maplhs} [line]					*ftpdev-:MapLhs*
 	This finds maps which lhs matches {maplhs} vim pattern. The bang works as in
 	|ftpdev-:Function|
+	The [line] argument is the same as in |ftpdev-:Function|.
 
+:MapRhs[!] {maprhs} [line]					*ftpdev-:MapRhs*
+	This finds maps which rhs matches {maprhs} vim pattern. The bang works as in
+	|ftpdev-:Function|
+	The [line] argument is the same as in |ftpdev-:Function|.
 							*ftpdev-gn*
 							*ftpdev-gN*
 							*ftpdev-:S*
@@ -111,9 +143,9 @@ map gN
 	
 
 Remember: Vim has its own vim.vim ftplugin which defines: 
-	]] 	(next begining of a function), 
+	]] 	(next beginning of a function), 
 	][ 	(next end of a function), 
-	[[ 	(previous begining of a function), 
+	[[ 	(previous beginning of a function), 
 	[] 	(previous end of a function).
 	
 
