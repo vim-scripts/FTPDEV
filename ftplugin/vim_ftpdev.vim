@@ -249,7 +249,13 @@ function! ListCommands(bang)
     if a:bang == "!"
 	call sort(loclist)
     endif
-    return join(loclist, "\n")
+    let cmds = []
+    for raw_cmd in loclist 
+	let pattern = '^\s*com\%[mand]!\=\%(\s*-buffer\s*\|\s*-nargs=[01*?+]\s*\|\s*-complete=\S\+\s*\|\s*-bang\s*\|\s*-range=\=[\d%]*\s*\|\s*-count=\d\+\s*\|\s*-bar\s*\|\s*-register\s*\)*\s*\zs\w*\ze'
+	call add(cmds, matchstr(raw_cmd, pattern))
+    endfor
+
+    return join(cmds, "\n")
 endfunction
 command! -bang ListCommands 	:echo ListCommands(<q-bang>)
 
@@ -280,8 +286,8 @@ function! EditCompl(A,B,C)
 endfunction
 command! -nargs=1 -complete=custom,EditCompl Edit	:call Edit(<q-args>)
 
-nmap	in	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
-nmap	iN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
+nmap	Gn	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
+nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
 
 " Print table tools:
 " {{{

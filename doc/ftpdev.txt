@@ -12,6 +12,10 @@ available commands and maps with some explanation:
 NEWS							*ftpdev-news*	
 
 >
+ version 4.1
+<
+ I change the maps in and iN to Gn and GN (they were interfereing with i).
+>
  version 4
 <
  :Map command is now splitted into two commands: |ftpdev-:MapLhs| and
@@ -40,13 +44,13 @@ In the version 3 there are two new commands:
 	make the match exact. This is done by completion function and not,
 	silently, by the commands (this makes a difference).
 
-nmap in
-nmap iN
+nmap Gn
+nmap GN
 	Goto next/previous if/else/elseif/endif pair (this, unlike |n| and |N|
 	vim maps, doesn't depend on v:searchforward). These maps are defined
 	by: >
- nmap	in	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
- nmap	iN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
+ nmap	Gn	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
+ nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
 <	
 	
 >
