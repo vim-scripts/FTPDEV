@@ -21,6 +21,7 @@
 "     with Automatic Tex Plugin for Vim.  If not, see <http://www.gnu.org/licenses/>.
 "
 "     This licence applies to all files shipped with Automatic Tex Plugin.
+
 if !exists("g:ftplugin_dir")
     let g:ftplugin_dir	= globpath(split(&rtp, ',')[0], 'ftplugin') . ',' . globpath(split(&rtp, ',')[0], 'plugin')
 endif
@@ -280,7 +281,7 @@ endfunction
 catch E127:
 endtry
 function! EditCompl(A,B,C)
-    let list=split(globpath(g:ftplugin_dir, "**"), "\n")
+    let list=filter(split(globpath(g:ftplugin_dir, "**"), "\n"), 'filereadable(v:val)')
     call map(list, 'fnamemodify(v:val, ":t")')
     return join(list, "\n")
 endfunction

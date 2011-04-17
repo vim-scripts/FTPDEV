@@ -12,6 +12,16 @@ available commands and maps with some explanation:
 NEWS							*ftpdev-news*	
 
 >
+ version 4.3
+<
+ It might be good idea to put in your vimrc file:
+     au BufEnter  {path_to_project_dir}/* source ~/.vim/ftplugin/vim_ftdev.vim
+ In this way you will get acces to |ftpdev-:Function|, |ftpdev-:Command|, ... commands even in
+ files of other file type than "vim" (for example in "txt" files).
+
+ Completion for |ftpdev-:Edit| command filters out files which are not readable
+ (this removes directories as well).
+>
  version 4.1
 <
  I change the maps in and iN to Gn and GN (they were interfereing with i).
