@@ -1,40 +1,49 @@
-*ftpdev.txt* 			For Vim version 7	Last change: 9 April 2011
+*ftpdev.txt* 			For Vim version 7	Last change: 20 April 2011
 
-		    A help file for <F>ile <T>ype <P>lugin <DEV>elopemnt  (ver 3)
+		    A help file for <F>ile <T>ype <P>lugin <DEV>elopemnt  (ver. 5)
 				by Marcin Szamotulski
 			    mszamot [AT] gmail [DOT] com
 			----------------------------------------
 
 This file type plugin provides some additional functions and commands which
-help writing and vim plugins. Especialy big ones. Here is the list of
+help writing and vim plugins. Especially big ones. Here is the list of
 available commands and maps with some explanation:
 
+======
 NEWS							*ftpdev-news*	
 
 >
- version 4.3
+ version 5
 <
  It might be good idea to put in your vimrc file:
      au BufEnter  {path_to_project_dir}/* source ~/.vim/ftplugin/vim_ftdev.vim
- In this way you will get acces to |ftpdev-:Function|, |ftpdev-:Command|, ... commands even in
- files of other file type than "vim" (for example in "txt" files).
+ In this way you will get access to |ftpdev-:Function|, |ftpdev-:Command|, ...
+ commands even in files of other file type than "vim" (for example in "txt"
+ files).
 
  Completion for |ftpdev-:Edit| command filters out files which are not readable
  (this removes directories as well).
+
+ |ftpdev-:Edit|, |ftpdev-:Split|, |ftpdev-:Vsplit| and |ftpdev-:Diffsplit|
+ commands, all support |:edit| arguments: |++opt| and |+cmd|. If you use
+ |++bin| and the ftpdev internals will not detect it while splitting the
+ options ftpdev will return with an error (however this shall work fine - and
+ was tested, it is just for safety reasons!).
+
 >
  version 4.1
 <
- I change the maps in and iN to Gn and GN (they were interfereing with i).
+ I change the maps in and iN to Gn and GN (they were interfering with i).
 >
  version 4
 <
- :Map command is now splitted into two commands: |ftpdev-:MapLhs| and
+ :Map command is now split into two commands: |ftpdev-:MapLhs| and
  |ftpdev-:MapRhs| to match for left/right hand side of a map. Both have
  completion for arguments.
 
  With command |ftpdev-:Function|, |ftpdev-:Command|, |ftpdev-:MapLhs|,
  |ftpdev-:MapRhs|  you can specify additional argument to which line of the
- function goto. If there are more than one result they are printed. This is
+ function go to. If there are more than one result they are printed. This is
  particularly useful when debugging a script and you got an error in function
  at a given line.
 >
@@ -56,27 +65,17 @@ In the version 3 there are two new commands:
 
 nmap Gn
 nmap GN
-	Goto next/previous if/else/elseif/endif pair (this, unlike |n| and |N|
+	Go to next/previous if/else/elseif/endif pair (this, unlike |n| and |N|
 	vim maps, doesn't depend on v:searchforward). These maps are defined
 	by: >
  nmap	Gn	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
  nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
 <	
-	
->
- version 2
-<
-In the version 2 of thus plugin you get:
-    map gn
-    man gN
-	    maps to search in the current function for the last search pattern @/.
-	    They work like |n| and |N|.
 
-    The messages for this search are now visibe.
+======
+CONFIGURATION						*ftpdev-configure* 
 
-    GetLatestVimScript support added.
-
-							|ftpdev-g:ftplugin_dir|
+							*ftpdev-g:ftplugin_dir*
 There is one variable which needs to be configured >
  g:ftplugin_dir
 < This is the directory which will be searched for files. If you set this to
@@ -84,9 +83,24 @@ your ~/.vim/ftplugin directory where you have lots of scripts this plugin
 might be a bit slow. Each plugin that I develop has its own directory (you
 probably use some version control system as I do) then this variable is set
 in my vimrc file via an autocommand: >
-	au BufEnter /some_directory/*.vim	let g:ftplugin=<value>
+	au BufEnter /plugin_dev_dir/*		let g:ftplugin=<plugin_dev_dir>
 <
+							*ftpdev-:PluginDir*
+:PluginDir {dir}	
+	This sets value of the variable |ftpdev-g:ftplugin_dir| to {dir}. It
+	has dir type completion.
 
+ 							*ftpdev-g:ftplugin_ResetPath*
+ |g:ftplugin_ResetPath| is set to 1 it will set |path|=g:ftplugin_dir, if not
+ set or equal 0 it will add g:ftplugin_dir to |path| (only if the path already
+ does not contain it). 
+ This makes the use of |edit|, |split|, |vsplit|, |diffsplit| a lot nicer.
+
+
+======
+COMMANDS AND MAPS					*ftpdev*
+
+SEARCHING COMMANDS ~
 :Function[!] {fname} [line]				*ftpdev-:Function*
 	This finds function with name matching {fname} vim pattern under the
 	|ftpdev-g:ftplugin_dir| directory. It uses the internal grep, i.e.
@@ -96,7 +110,7 @@ in my vimrc file via an autocommand: >
 	{fname} can not begin with <SID> or 's:' even if the function name has
 	it.
 
-	The bang vimgrep is supplied with the j switch, i.e. only quickfix
+	The bang vimgrep is supplied with the j switch, i.e. only quick fix
 	list will be filled with matches.
 
 	There is completion for {fname}s.
@@ -119,12 +133,12 @@ in my vimrc file via an autocommand: >
 	|ftpdev-:Function|
 	The [line] argument is the same as in |ftpdev-:Function|.
 
-:MapLhs[!] {maplhs} [line]					*ftpdev-:MapLhs*
+:MapLhs[!] {maplhs} [line]				*ftpdev-:MapLhs*
 	This finds maps which lhs matches {maplhs} vim pattern. The bang works as in
 	|ftpdev-:Function|
 	The [line] argument is the same as in |ftpdev-:Function|.
 
-:MapRhs[!] {maprhs} [line]					*ftpdev-:MapRhs*
+:MapRhs[!] {maprhs} [line]				*ftpdev-:MapRhs*
 	This finds maps which rhs matches {maprhs} vim pattern. The bang works as in
 	|ftpdev-:Function|
 	The [line] argument is the same as in |ftpdev-:Function|.
@@ -139,16 +153,11 @@ map gN
 	pattern passed to |vimgrep|.
 
 	The pattern is added to search history and copied to the @/ register,
-	thus you can re use it with |n| and |N| commands to search globaly or
+	thus you can re use it with |n| and |N| commands to search globally or
 	gn and gN to search in the scope of current function.
 
 	Note that you can first search with the vim standard |/| or |?| and
 	then use |ftpdev-gn| and |ftpdev-gN|.
-
-							*ftpdev-:PluginDir*
-:PluginDir {directory}	
-	This sets the variable |ftpdev-g:ftplugin_dir|. It has dir type
-	completion.
 
 							*ftpdev-:Pgrep*
 :Pgrep /{pattern}/[j][g]
@@ -163,10 +172,46 @@ Remember: Vim has its own vim.vim ftplugin which defines:
 	[] 	(previous end of a function).
 	
 
-Happy viming :)	
+EDITING A FILE ~
+:Edit [++opt] [+cmd] {file}				*ftpdev-:Edit*
+	Like |:edit| vim command. See |++opt| and |+cmd|. If |++bin| is given
+	and then forgot returns with an error (while this should not happen,
+	it is for safety reasons).
+	
+	The {file} argument has a completion for files under the
+	|g:ftpdev_dir| directory (using |globpath()| vim function). The
+	completion function accepts {file} to be a pattern, for example >
+		:Edit +10  \.txt$<tab>
+<	Will list all txt files. If none file names match, path relative to
+	|g:fptlugin_dir| are tried. The completions with {file} containing
+	spaces might not work right.
+		
+:Split [++opt] [+cmd] {file}				*ftpdev-:Split*
+	Like |:split| vim command. See |++opt| and |+cmd|. If |++bin| is given and then
+	forgot returns with an error (while this should not happen, it is for
+	safety reasons).
+
+	For {file} argument completion read |ftpdev-:Edit|. 
+
+:Vsplit [++opt] [+cmd] {file}				*ftpdev-:Vsplit*
+	Like |:vsplit| vim command. See |++opt| and |+cmd|. If |++bin| is given and then
+	forgot returns with an error (while this should not happen, it is for
+	safety reasons).
+
+	For {file} argument completion read |ftpdev-:Edit|. 
+
+:Diffsplit {file}					*ftpdev-:Diffsplit*
+	Like |:diffsplit| vim command. See |++opt| and |+cmd|. If |++bin| is given and then
+	forgot returns with an error (while this should not happen, it is for
+	safety reasons).
+
+	For {file} argument completion read |ftpdev-:Edit|. 
+
+
+Happy vimming :)	
 
 ================================================================================
-COPY RIGHTS							*ftpdev-copy-rights*
+COPY RIGHTS						*ftpdev-copy-rights*
 
 
     Copyright (C) 2010 Marcin Szamotulski Permission is hereby granted to use
@@ -189,6 +234,4 @@ COPY RIGHTS							*ftpdev-copy-rights*
     This licence applies to all files shipped with FTPDEV filetype plugin.
 
 
-
-
-" vim:tw=75:ts=8:ft=help:norl:
+vim:tw=75:ts=8:ft=help:norl:
