@@ -26,6 +26,12 @@
 if !exists("g:ftplugin_dir")
     let g:ftplugin_dir	= globpath(split(&rtp, ',')[0], 'ftplugin') . ',' . globpath(split(&rtp, ',')[0], 'plugin')
 endif
+if !exists("g:ftplugin_installdir")
+    let g:ftplugin_installdir=split(&runtimepath,",")[0]
+endif
+if !exists("g:ftplugin_notinstall")
+    let g:ftplugin_notinstall=['Makefile', '.*\.tar\.\%(bz2\|gz\)$', '.*\.vba$']
+endif
 if exists("g:ftplugin_ResetPath") && g:ftplugin_ResetPath == 1
     au! BufEnter * let &l:path=g:ftplugin_dir
 else
@@ -97,7 +103,10 @@ command! -buffer -bang -nargs=? -complete=custom,FuncCompl Function 	:call Goto(
 function! FuncCompl(A,B,C)
     let saved_loclist=getloclist(0)
     let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
-    exe 'lvimgrep /^\s*fun\%[ction]/gj '.filename
+    try
+	exe 'lvimgrep /^\s*fun\%[ction]/gj '.filename
+    catch /E480:/
+    endtry
     let loclist = getloclist(0)
     call setloclist(0, saved_loclist)
     call map(loclist, 'get(v:val, "text", "")')  
@@ -108,7 +117,10 @@ endfunction
 function! CommandCompl(A,B,C)
     let saved_loclist=getloclist(0)
     let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
-    exe 'lvimgrep /^\s*com\%[mand]/gj '.filename
+    try
+	exe 'lvimgrep /^\s*com\%[mand]/gj '.filename
+    catch /E480:/
+    endtry
     let loclist = getloclist(0)
     call setloclist(0, saved_loclist)
     call map(loclist, 'get(v:val, "text", "")')  
@@ -119,7 +131,10 @@ endfunction
 function! MapRhsCompl(A,B,C)
     let saved_loclist=getloclist(0)
     let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
-    exe 'lvimgrep /^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>/gj '.filename
+    try
+	exe 'lvimgrep /^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>/gj '.filename
+    catch /E480:/
+    endtry
     let loclist = getloclist(0)
     call setloclist(0, saved_loclist)
     call map(loclist, 'get(v:val, "text", "")')  
@@ -131,7 +146,10 @@ endfunction
 function! MapLhsCompl(A,B,C)
     let saved_loclist=getloclist(0)
     let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
-    exe 'lvimgrep /^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>/gj '.filename
+    try
+	exe 'lvimgrep /^\s*[cilnosvx!]\=\%(nore\)\=m\%[ap]\>/gj '.filename
+    catch /E480:/
+    endtry
     let loclist = getloclist(0)
     call setloclist(0, saved_loclist)
     call map(loclist, 'get(v:val, "text", "")')  
@@ -190,7 +208,7 @@ function! SearchInFunction(pattern, flag)
 	    echohl Normal
     endif
 endfunction
-function! s:GetSearchArgs(Arg,flags)
+function! <SID>GetSearchArgs(Arg,flags)
     if a:Arg =~ '^\/'
 	let pattern 	= matchstr(a:Arg, '^\/\zs.*\ze\/')
 	let flag	= matchstr(a:Arg, '\/.*\/\s*\zs['.a:flags.']*\ze\s*$')
@@ -205,7 +223,7 @@ function! s:GetSearchArgs(Arg,flags)
 endfunction
 function! Search(Arg)
 
-    let [ pattern, flag ] = s:GetSearchArgs(a:Arg, 'bcenpswW')
+    let [ pattern, flag ] = <SID>GetSearchArgs(a:Arg, 'bcenpswW')
     let @/ = pattern
     call histadd("search", pattern)
 
@@ -219,7 +237,7 @@ function! Search(Arg)
 
     call SearchInFunction(pattern, flag)
 endfunction
-command! -buffer -nargs=*	S 	:call Search(<q-args>) | let v:searchforward = ( s:GetSearchArgs(<q-args>, 'bcenpswW')[1] =~# 'b' ? 0 : 1 )
+command! -buffer -nargs=*	S 	:call Search(<q-args>) | let v:searchforward = ( <SID>GetSearchArgs(<q-args>, 'bcenpswW')[1] =~# 'b' ? 0 : 1 )
 " my vim doesn't distinguish <C-n> and <C-N>:
 nmap <silent> <buffer> <C-N>				:call SearchInFunction(@/,'')<CR>
 nmap <silent> <buffer> <C-P> 				:call SearchInFunction(@/,'b')<CR>
@@ -236,15 +254,29 @@ command! -nargs=? -complete=file PluginDir	:call PluginDir(<f-args>)
 
 try
 function! Pgrep(vimgrep_arg)
-    let filename	= join(map(split(globpath(g:ftplugin_dir, '**/*vim'), "\n"), "fnameescape(v:val)"))
-    execute "vimgrep " . a:vimgrep_arg . " " . filename 
+    let filename	= join(filter(map(split(globpath(g:ftplugin_dir, '**/*'), "\n"), "fnameescape(v:val)"),"!isdirectory(v:val)"))
+    try
+	execute "vimgrep " . a:vimgrep_arg . " " . filename 
+    catch /E480:/
+	echohl ErrorMsg
+	redraw
+	echo "E480: No match: ".a:vimgrep_arg
+	echohl Normal
+    endtry
 endfunction
 catch /E127:/
 endtry
 command! -nargs=1 Pgrep		:call Pgrep(<q-args>)
 
 function! ListFunctions(bang)
-    lvimgrep /^\s*fun\%[ction]/gj %
+    try
+	lvimgrep /^\s*fun\%[ction]/gj %
+    catch /E480:/
+	echohl ErrorMsg
+	redraw
+	echo "E480: No match: ".a:vimgrep_arg
+	echohl Normal
+    endtry
     let loclist = getloclist(0)
     call map(loclist, 'get(v:val, "text", "")')  
     call map(loclist, 'matchstr(v:val, ''^\s*fun\%[ction]!\=\s*\zs.*\ze\s*('')')
@@ -256,7 +288,14 @@ endfunction
 command! -bang ListFunctions 	:echo ListFunctions(<q-bang>)
 
 function! ListCommands(bang)
-    lvimgrep /^\s*com\%[mmand]/gj %
+    try
+	lvimgrep /^\s*com\%[mmand]/gj %
+    catch /E480:/
+	echohl ErrorMsg
+	redraw
+	echo "E480: No match: ".a:vimgrep_arg
+	echohl Normal
+    endtry
     let loclist = getloclist(0)
     call map(loclist, 'get(v:val, "text", "")')  
     call map(loclist, 'substitute(v:val, ''^\s*'', '''', '''')')
@@ -276,8 +315,9 @@ command! -bang ListCommands 	:echo ListCommands(<q-bang>)
 try
 function! Edit(cmd,args)
     
-    let edit_args = matchstr(a:args, '\zs\(++\(\w\|=\)\+\s*\)*\(\s*+\S\+\s*\)*')
-    let file = strpart(a:args,matchend(a:args, '\zs\(++\(\w\|=\)\+\s*\)*\(\s*+\S\+\s*\)*'))
+    let edit_args = matchstr(a:args, '\zs\(++\(\w\|=\)\+\s*\)*\(\s*+\S*\s*\)*')
+    let file = strpart(a:args,matchend(a:args, '\zs\(++\(\w\|=\)\+\s*\)*\(\s*+\S*\s*\)*'))
+    let g:file = file
     if edit_args !~# '++bin' && a:args =~# '++bin'
 	echoerr "[ftpdev:] Edit arg error: a:args contains ++bin, and edit_args doesn't"
 	return
@@ -307,7 +347,7 @@ catch E127:
 endtry
 function! EditCompl(A,B,C)
     let s:pat = a:A
-    let list=filter(split(globpath(g:ftplugin_dir, "**"), "\n"), 'filereadable(v:val)')
+    let list=filter(split(globpath(g:ftplugin_dir, "**"), "\n"), '!isdirectory(v:val)')
     call remove(list, index(list,expand("%:p")))
     let list_orig = copy(list)
     " This is not the best, I should check if the file name is unique if not
@@ -341,16 +381,55 @@ function! EditCompl(A,B,C)
 	return n1 == n2 ? 0 : n1 > n2 ? 1 : -1
     endfunction
     call sort(list, "MyCompare")
+    redraw
     return list
 "     return join(list, "\n")
 endfunction
 command! -nargs=1 -complete=customlist,EditCompl Edit		:call Edit("edit",<q-args>)
 command! -nargs=1 -complete=customlist,EditCompl Split		:call Edit("split",<q-args>)
 command! -nargs=1 -complete=customlist,EditCompl Vsplit		:call Edit("vsplit",<q-args>)
+command! -nargs=1 -complete=customlist,EditCompl Tabe		:call Edit("tabedit",<q-args>)
 command! -nargs=1 -complete=customlist,EditCompl Diffsplit	:call Edit("diffsplit",<f-args>)
 
 nmap	Gn	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
 nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
+
+function! <SID>Install(bang)
+
+    let cwd = getcwd()
+    exe 'lcd '.g:ftplugin_dir
+    
+    if a:bang == "" 
+	" Note: this returns non zero list if the buffer is loaded
+	" ':h getbufline()'
+	let file_name = fnamemodify(bufname(""), ":.")
+	let file		= getbufline( '%', '1', '$')
+	call writefile( file, $HOME . "/.vim/" . file_name)
+    else
+	for file in filter(split(globpath(g:ftplugin_dir, "**"), "\n"), "!isdirectory(v:val) && <SID>Index(g:ftplugin_notinstall, fnamemodify(v:val, ':.')) == -1")
+	    echo file
+	    if bufloaded(file)
+		let file_list		= getbufline( file, '1', '$')
+	    else
+		let file_list		= readfile( file)
+	    endif
+	    let file_name = fnamemodify(file, ":.")
+	    call writefile(file_list, substitute(g:ftplugin_installdir, '\/$', '', '')."/".file_name)
+	endfor
+    endif
+    exe "lcd ".cwd
+endfunction
+function! <SID>Index(list, pattern)
+    let ind = -1
+    for element in a:list
+	let ind += 1
+	if element =~ a:pattern || element == a:pattern
+	    return ind
+	endif
+    endfor
+    return -1
+endfunction
+command! -bang Install 	:call <SID>Install(<q-bang>)
 
 " Print table tools:
 " {{{

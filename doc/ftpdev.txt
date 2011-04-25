@@ -1,6 +1,7 @@
-*ftpdev.txt* 			For Vim version 7	Last change: 20 April 2011
+*ftpdev.txt* 			For Vim version 7	Last change: 23 April 2011
 
-		    A help file for <F>ile <T>ype <P>lugin <DEV>elopemnt  (ver. 5)
+
+		    A help file for <F>ile <T>ype <P>lugin <DEV>elopemnt  (ver. 5.2)
 				by Marcin Szamotulski
 			    mszamot [AT] gmail [DOT] com
 			----------------------------------------
@@ -13,64 +14,30 @@ available commands and maps with some explanation:
 NEWS							*ftpdev-news*	
 
 >
- version 5
+ version 5.2
 <
- It might be good idea to put in your vimrc file:
-     au BufEnter  {path_to_project_dir}/* source ~/.vim/ftplugin/vim_ftdev.vim
- In this way you will get access to |ftpdev-:Function|, |ftpdev-:Command|, ...
- commands even in files of other file type than "vim" (for example in "txt"
- files).
+ |ftpdev-:Pgrep| searches in all files under |ftpdev-g:ftplugin_dir|, not only vim
+ scripts, this is useful if some of the scripts are written in other language
+ (python, perl, ruby).
 
- Completion for |ftpdev-:Edit| command filters out files which are not readable
- (this removes directories as well).
+:Install[!] 						|ftpdev-:Install|
+ 	Without bang "!": will copy the current buffer to the location
+	under |g:ftplugin_installdir| be default it is first path that appear in
+	'runtimepath' vim option.
+	With bang "!": it will install all the files found under
+	|g:ftplugin_dir| except the files in the list |g:ftplugin_notinstall|.
 
- |ftpdev-:Edit|, |ftpdev-:Split|, |ftpdev-:Vsplit| and |ftpdev-:Diffsplit|
- commands, all support |:edit| arguments: |++opt| and |+cmd|. If you use
- |++bin| and the ftpdev internals will not detect it while splitting the
- options ftpdev will return with an error (however this shall work fine - and
- was tested, it is just for safety reasons!).
-
->
- version 4.1
+	You can use this command in an autocommand for certain files: >
+		au BufWritePost <some_file>	:Install
 <
- I change the maps in and iN to Gn and GN (they were interfering with i).
->
- version 4
-<
- :Map command is now split into two commands: |ftpdev-:MapLhs| and
- |ftpdev-:MapRhs| to match for left/right hand side of a map. Both have
- completion for arguments.
+							|ftpdev-g:ftplugin_notinstall|
+g:ftplugin_notinstall=['Makefile', '.*\.tar\.\%(bz2\|gz\)$', '.*\.vba$']
+	This is list of patterns or file names relative to |g:ftplugin_dir|
+	which will not be installed by |ftpdev-:Install| command.
 
- With command |ftpdev-:Function|, |ftpdev-:Command|, |ftpdev-:MapLhs|,
- |ftpdev-:MapRhs|  you can specify additional argument to which line of the
- function go to. If there are more than one result they are printed. This is
- particularly useful when debugging a script and you got an error in function
- at a given line.
->
- version 3
-<
-In the version 3 there are two new commands:
-:ListFunctions
-:ListCommands
-	They list functions and commands defined in the current file. 
-
-:Function {function-name}
-	Has completion for names of functions found in the project.
-:Commands {command-name}
-	Has completion for names of commands found in the project.
-
-	Both completions add \> at the end of the function/command name to
-	make the match exact. This is done by completion function and not,
-	silently, by the commands (this makes a difference).
-
-nmap Gn
-nmap GN
-	Go to next/previous if/else/elseif/endif pair (this, unlike |n| and |N|
-	vim maps, doesn't depend on v:searchforward). These maps are defined
-	by: >
- nmap	Gn	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
- nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
-<	
+							|ftpdev-g:ftplugin_installdir|
+g:ftplugin_installdir=split(&runtimepath,",")[0]
+	Directory name where to |ftpdev-:Install| files.
 
 ======
 CONFIGURATION						*ftpdev-configure* 
@@ -96,6 +63,23 @@ in my vimrc file via an autocommand: >
  does not contain it). 
  This makes the use of |edit|, |split|, |vsplit|, |diffsplit| a lot nicer.
 
+							*ftpdev-g:ftplugin_notinstall*
+g:ftplugin_notinstall=['Makefile', '.*\.tar\.\%(bz2\|gz\)$', '.*\.vba$']
+	This is list of patterns or file names relative to |g:ftplugin_dir|
+	which will not be installed by |ftpdev-:Install| command.
+
+							*ftpdev-g:ftplugin_installdir*
+g:ftplugin_installdir=split(&runtimepath,",")[0]
+	Directory name where to |ftpdev-:Install| files.
+
+
+TIP ~
+
+ It might be good idea to put in your vimrc file: >
+     au BufEnter  {path_to_project_dir}/* source ~/.vim/ftplugin/vim_ftdev.vim
+<In this way you will get access to |ftpdev-:Function|, |ftpdev-:Command|, ...
+ commands even in files of other file type than "vim" (for example in "txt"
+ files).
 
 ======
 COMMANDS AND MAPS					*ftpdev*
@@ -107,25 +91,31 @@ SEARCHING COMMANDS ~
 	|vimgrep|. {fname} should be as the first argument of |vimgrep| except
 	it doesn't have to be put between /.../ .
 
-	{fname} can not begin with <SID> or 's:' even if the function name has
+	{fname} should not begin with <SID> or 's:' even if the function name has
 	it.
 
 	The bang vimgrep is supplied with the j switch, i.e. only quick fix
 	list will be filled with matches.
 
-	There is completion for {fname}s.
+	There is a completion for {fname}s.
 
 	If [line] is non zero, go [lines] below. This is especially useful
 	when you are debugging a script and you got en error in function
 	{fname} at line [line].
+
+:ListFunctions						 *ftpdev-:ListFunctions*
+	List functions in defined in the current buffer.
 
 :Command[!] {cname} [line]				*ftpdev-:Command*
 	This finds command which name matches {fname} vim pattern under the
 	|ftpdev-g:ftplugin_dir| {cname> has the same syntax as {fname}. The
 	bang works as in |ftpdev-:Function|
 
-	There is completion for {cname}s.
+	There is a completion for {cname}s.
 	The [line] argument is the same as in |ftpdev-:Function|.
+
+:ListCommands						 *ftpdev-:ListCommands*
+	List commands in defined in the current buffer.
 
 :Variable[!] {vname} [line]				*ftpdev-:Variable*
 	This finds variable definition matching {vname}. {vname} has to contain
@@ -161,8 +151,8 @@ map gN
 
 							*ftpdev-:Pgrep*
 :Pgrep /{pattern}/[j][g]
-	This makes |vimgrep| in all files '*.vim' under |ftpdev-g:ftplugin_dir|.
-	The argument syntax is the same as for |vimgrep|.
+	This makes |vimgrep| in all files under |ftpdev-g:ftplugin_dir|.  The
+	argument syntax is the same as for |vimgrep|.
 	
 
 Remember: Vim has its own vim.vim ftplugin which defines: 
@@ -171,10 +161,19 @@ Remember: Vim has its own vim.vim ftplugin which defines:
 	[[ 	(previous beginning of a function), 
 	[] 	(previous end of a function).
 	
+nmap Gn							*ftpdev-Gn*
+nmap GN							*ftpdev-GN*
+	Go to next/previous if/else/elseif/endif pair (this, unlike |n| and |N|
+	vim maps, doesn't depend on v:searchforward). These maps are defined
+	by: >
+ nmap	Gn	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
+ nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
+<	
 
 EDITING A FILE ~
 :Edit [++opt] [+cmd] {file}				*ftpdev-:Edit*
-	Like |:edit| vim command. See |++opt| and |+cmd|. If |++bin| is given
+:Tabe [++opt] [+cmd] {file}
+	Like |:edit| or |:tabe| vim command. See |++opt| and |+cmd|. If |++bin| is given
 	and then forgot returns with an error (while this should not happen,
 	it is for safety reasons).
 	
@@ -206,6 +205,15 @@ EDITING A FILE ~
 	safety reasons).
 
 	For {file} argument completion read |ftpdev-:Edit|. 
+
+INSTALLING ~
+
+:Install[!] 						*ftpdev-:Install*
+	Without bang "!": it will copy the current buffer to the location
+	under |g:ftplugin_installdir| be default it is first path that appear
+	in 'runtimepath' vim option.
+	With bang "!": it will install all the files found under
+	|g:ftplugin_dir| except the files in the (file/pattern) list |g:ftplugin_notinstall|.
 
 
 Happy vimming :)	
