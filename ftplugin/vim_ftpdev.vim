@@ -4,7 +4,7 @@
 " Email:  mszamot [AT] gmail [DOT] com
 " Last Change:
 " GetLatestVimScript: 3322 2 :AutoInstall: FTPDEV
-" Copyright Statement: 
+" Copyright Statement: {{{1
 " 	  This file is a part of Automatic Tex Plugin for Vim.
 "
 "     Automatic Tex Plugin for Vim is free software: you can redistribute it
@@ -23,6 +23,7 @@
 "     This licence applies to all files shipped with Automatic Tex Plugin.
 
 
+"{{{1 GLOBAL VARIABLES
 if !exists("g:ftplugin_dir")
     let g:ftplugin_dir	= globpath(split(&rtp, ',')[0], 'ftplugin') . ',' . globpath(split(&rtp, ',')[0], 'plugin')
 endif
@@ -45,7 +46,10 @@ else
     exe "au! VimEnter * call FTPLUGIN_AddPath()"
 endif
 try
-function! Goto(what,bang,...)
+"1}}}
+
+" FUNCTIONS AND COMMANDS:
+function! Goto(what,bang,...) 
     let g:a	= (a:0 >= 1 ? a:1 : "")
     let pattern = (a:0 >= 1 ? 
 		\ (a:1 =~ '.*\ze\s\+\d\+$' ? matchstr(a:1, '.*\ze\s\+\d\+$') : a:1)
@@ -431,9 +435,41 @@ function! <SID>Index(list, pattern)
 endfunction
 command! -bang Install 	:call <SID>Install(<q-bang>)
 
+function! Evaluate(mode)
+    let saved_pos	= getpos(".")
+    let saved_reg	= @e
+    if a:mode == "n"
+	if strpart(getline(line(".")), col(".")-1) =~ '[bg]:'
+	    let end_pos = searchpos('[bg]:\w*\zs\>', 'cW')
+	else
+	    let end_pos = searchpos('\ze\>', 'cW')
+	endif
+	let end_pos[1] -= 1 
+	call cursor(saved_pos[1], saved_pos[2])
+	normal! v
+	call cursor(end_pos)
+	normal! "ey
+	let expr = @e
+    elseif a:mode ==? 'v'
+	let beg_pos = getpos("'<")
+	let end_pos = getpos("'>")
+	call cursor(beg_pos[1], beg_pos[2])
+	normal! v 
+	call cursor(end_pos[1], end_pos[2])
+	normal! "ey
+	let expr= @e
+    endif
+    let @e = saved_reg
+    try
+	echo expr."=".string({expr})
+    catch /E121:/
+	echomsg "variable ".expr." undefined"
+    endtry
+endfunction
+command! -buffer -range Eval	:call Evaluate(mode())
+
 " Print table tools:
-" {{{
-function! <SID>FormatListinColumns(list,s)
+function! <SID>FormatListinColumns(list,s) "{{{1
     " take a list and reformat it into many columns
     " a:s is the number of spaces between columns
     " for example of usage see atplib#PrintTable
@@ -454,9 +490,11 @@ function! <SID>FormatListinColumns(list,s)
     endfor
     return new_list
 endfunction 
+
+function! <SID>PrintTable(list, spaces) "{{{1
 " Take list format it with atplib#FormatListinColumns and then with
 " atplib#Table (which makes columns of equal width)
-function! <SID>PrintTable(list, spaces)
+
     " a:list 	- list to print
     " a:spaces 	- nr of spaces between columns 
 
@@ -469,4 +507,3 @@ function! <SID>PrintTable(list, spaces)
     
     return atplib#Table(list, spaces_list)
 endfunction
-"}}}
