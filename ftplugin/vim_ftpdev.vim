@@ -34,12 +34,12 @@ if !exists("g:ftplugin_notinstall")
     let g:ftplugin_notinstall=['Makefile', '.*\.tar\.\%(bz2\|gz\)$', '.*\.vba$']
 endif
 if exists("g:ftplugin_ResetPath") && g:ftplugin_ResetPath == 1
-    au! BufEnter * let &l:path=g:ftplugin_dir
+    au! BufEnter * let &l:path=g:ftplugin_dir.",".join(filter(split(globpath(g:ftplugin_dir.'**', '*'), "\n"), "isdirectory(v:val)"), ",")
 else
     function! FTPLUGIN_AddPath()
 	let path=map(split(&path, ','), "fnamemodify(v:val, ':p')")
 	if index(path,fnamemodify(g:ftplugin_dir, ":p")) == -1
-	    let &l:path=( len(path)==0 ? g:ftplugin_dir : &path.",".g:ftplugin_dir )
+	    let &l:path=( len(path)==0 ? g:ftplugin_dir : &path.",".g:ftplugin_dir.",".join(filter(split(globpath(g:ftplugin_dir.'**', '*'), "\n"), "isdirectory(v:val)"), ",") )
 	endif
     endfunction
     exe "au! BufEnter ".g:ftplugin_dir."* call FTPLUGIN_AddPath()"
@@ -63,9 +63,9 @@ function! Goto(what,bang,...)
     let g:line = line
     let grep_flag = ( a:bang == "!" ? 'j' : '' )
     if a:what == 'function'
-	let pattern		= '^\s*fu\%[nction]!\=\s\+\%(s:\|<\csid>\)\=' .  ( a:0 >=  1 ? pattern : '' )
+	let pattern		= '^\s*\%(silent!\=\)\=\s*fu\%[nction]!\=\s\+\%(s:\|<\csid>\)\=' .  ( a:0 >=  1 ? pattern : '' )
     elseif a:what == 'command'
-	let pattern		= '^\s*com\%[mand]!\=\%(\s*-buffer\s*\|\s*-nargs=[01*?+]\s*\|\s*-complete=\S\+\s*\|\s*-bang\s*\|\s*-range=\=[\d%]*\s*\|\s*-count=\d\+\s*\|\s*-bar\s*\|\s*-register\s*\)*\s*'.( a:0 >= 1 ? pattern : '' )
+	let pattern		= '^\s*\%(silent!\=\)\=\s*com\%[mand]!\=\%(\s*-buffer\s*\|\s*-nargs=[01*?+]\s*\|\s*-complete=\S\+\s*\|\s*-bang\s*\|\s*-range=\=[\d%]*\s*\|\s*-count=\d\+\s*\|\s*-bar\s*\|\s*-register\s*\)*\s*'.( a:0 >= 1 ? pattern : '' )
     elseif a:what == 'variable'
 	let pattern 		= '^\s*let\s\+' . ( a:0 >=  1 ? pattern : '' )
     elseif a:what == 'maplhs'
@@ -315,85 +315,6 @@ function! ListCommands(bang)
     return join(cmds, "\n")
 endfunction
 command! -bang ListCommands 	:echo ListCommands(<q-bang>)
-
-try
-function! Edit(cmd,args)
-    
-    let edit_args = matchstr(a:args, '\zs\(++\(\w\|=\)\+\s*\)*\(\s*+\S*\s*\)*')
-    let file = strpart(a:args,matchend(a:args, '\zs\(++\(\w\|=\)\+\s*\)*\(\s*+\S*\s*\)*'))
-    let g:file = file
-    if edit_args !~# '++bin' && a:args =~# '++bin'
-	echoerr "[ftpdev:] Edit arg error: a:args contains ++bin, and edit_args doesn't"
-	return
-    endif
-    if file == ""
-	return
-    endif
-    let files = split(globpath(g:ftplugin_dir, '**/'.file), "\n")
-    if len(files) == 0
-	return
-    elseif len(files) == 1
-	execute a:cmd." ".edit_args." ".files[0]
-    else
-	let files_s = []
-	let i=1
-	for file in files 	
-	    call add(files_s, i.". ".file)
-	    let i+=1
-	endfor
-	let input = inputlist(['Which file to edit? write number and hit <enter>, nothing to exit ']+files_s)
-	if input >= 1 && input <= len(files)
-	    execute a:cmd." ".edit_args." ".files[input-1]
-	endif
-    endif
-endfunction
-catch E127:
-endtry
-function! EditCompl(A,B,C)
-    let s:pat = a:A
-    let list=filter(split(globpath(g:ftplugin_dir, "**"), "\n"), '!isdirectory(v:val)')
-    call remove(list, index(list,expand("%:p")))
-    let list_orig = copy(list)
-    " This is not the best, I should check if the file name is unique if not
-    " add portion of the path which distinguishes them:
-    call map(list, 'fnamemodify(v:val, ":t")')
-    " Anyway the Edit function will show full path of files to chose from:
-    " So we can filter out double entries:
-    for file in list
-	if count(list,file) > 1 
-	    call remove(list,index(list,file))
-	endif
-    endfor
-"     let file = strpart(a:C,matchend(a:C, '\(\(.*++\(\w\|=\)\+\s*\)\=\&\(.*+\S\+\s*\)\=\)'))
-"     call filter(list, 'v:val =~# file')
-    call filter(list, 'v:val =~# a:A')
-    if list == []
-	" If the list was empty match path relative to g:ftpdev_dir.
-	let list=list_orig
-	let cwd = getcwd()
-	exe "lcd ".g:ftplugin_dir
-	call map(list, 'fnamemodify(v:val, ":.")')
-	exe "lcd ".cwd
-	call filter(list, 'v:val =~# a:A')
-    endif
-
-    call sort(list)
-    function! MyCompare(i1,i2)
-	let pat = ( s:pat =~ '^\^' ? substitute(s:pat,'^\^', '','')  : s:pat )
-	let n1  = match(a:i1,pat)
-	let n2  = match(a:i2,pat)
-	return n1 == n2 ? 0 : n1 > n2 ? 1 : -1
-    endfunction
-    call sort(list, "MyCompare")
-    redraw
-    return list
-"     return join(list, "\n")
-endfunction
-command! -nargs=1 -complete=customlist,EditCompl Edit		:call Edit("edit",<q-args>)
-command! -nargs=1 -complete=customlist,EditCompl Split		:call Edit("split",<q-args>)
-command! -nargs=1 -complete=customlist,EditCompl Vsplit		:call Edit("vsplit",<q-args>)
-command! -nargs=1 -complete=customlist,EditCompl Tabe		:call Edit("tabedit",<q-args>)
-command! -nargs=1 -complete=customlist,EditCompl Diffsplit	:call Edit("diffsplit",<f-args>)
 
 nmap	Gn	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
 nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
