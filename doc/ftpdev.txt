@@ -13,6 +13,24 @@ available commands and maps with some explanation:
 ======
 NEWS							*ftpdev-news*	
 >
+ version 5.5
+<
+ |ftpdev-:Function|, |ftpdev-:Command|, |ftpdev-:MapLhs|, |ftpdev-:MapRhs| and
+ |ftpdev-:Variable| are using location list rather than the quick fix list.
+ Use |:llist|, |:lne| and |:lp| vim commands.
+
+ |ftpdev-:S| command is works well when the pattern contains |\v| (but not
+ when it mixes |\m|, |\v|).
+>
+ version 5.4
+<
+ gn and gN changed into ]# and [# what is more in a vim way. See |ftpdev-]#|
+ and |ftpdev-[#|.
+
+ :Edit, :Split, ... commands removed. Instead the |path| option is set so you
+ can use |:find|, |:sfind|, ... commands.
+
+>
  version 5.3
 <
  See |ftpdev-:Eval|.
@@ -110,12 +128,12 @@ SEARCHING COMMANDS ~
 	This finds maps which rhs matches {maprhs} vim pattern. The bang works as in
 	|ftpdev-:Function|
 	The [line] argument is the same as in |ftpdev-:Function|.
-							*ftpdev-gn*
-							*ftpdev-gN*
+							*ftpdev-]#*
+							*ftpdev-[#*
 							*ftpdev-:S*
 :S /{pattern}/
-map gn
-map gN
+map ]#
+map [#
 	This function make a search of {pattern} in the current function (it
 	can wrap around the end of function. The argument {pattern} is a vim
 	pattern passed to |vimgrep|.
@@ -156,42 +174,6 @@ nmap GN							*ftpdev-GN*
  nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
 <	
 
-EDITING A FILE ~
-:Edit [++opt] [+cmd] {file}				*ftpdev-:Edit*
-:Tabe [++opt] [+cmd] {file}
-	Like |:edit| or |:tabe| vim command. See |++opt| and |+cmd|. If |++bin| is given
-	and then forgot returns with an error (while this should not happen,
-	it is for safety reasons).
-	
-	The {file} argument has a completion for files under the
-	|g:ftpdev_dir| directory (using |globpath()| vim function). The
-	completion function accepts {file} to be a pattern, for example >
-		:Edit +10  \.txt$<tab>
-<	Will list all txt files. If none file names match, path relative to
-	|g:fptlugin_dir| are tried. The completions with {file} containing
-	spaces might not work right.
-		
-:Split [++opt] [+cmd] {file}				*ftpdev-:Split*
-	Like |:split| vim command. See |++opt| and |+cmd|. If |++bin| is given and then
-	forgot returns with an error (while this should not happen, it is for
-	safety reasons).
-
-	For {file} argument completion read |ftpdev-:Edit|. 
-
-:Vsplit [++opt] [+cmd] {file}				*ftpdev-:Vsplit*
-	Like |:vsplit| vim command. See |++opt| and |+cmd|. If |++bin| is given and then
-	forgot returns with an error (while this should not happen, it is for
-	safety reasons).
-
-	For {file} argument completion read |ftpdev-:Edit|. 
-
-:Diffsplit {file}					*ftpdev-:Diffsplit*
-	Like |:diffsplit| vim command. See |++opt| and |+cmd|. If |++bin| is given and then
-	forgot returns with an error (while this should not happen, it is for
-	safety reasons).
-
-	For {file} argument completion read |ftpdev-:Edit|. 
-
 INSTALLING ~
 
 :Install[!] 						*ftpdev-:Install*
@@ -230,4 +212,4 @@ COPY RIGHTS						*ftpdev-copy-rights*
     This licence applies to all files shipped with FTPDEV filetype plugin.
 
 
-vim:tw=75:ts=8:ft=help:norl:
+vim:tw=75:ts=8:ft=help:norl:ft=help
