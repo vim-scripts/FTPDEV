@@ -30,6 +30,8 @@ let s:vim_dirs = [ "ftplugin", "plugin", "autoload", "compiler", "syntax",
 	\ "indent", "colors", "doc", "keymap", "lang", "macros", "print",
 	\ "spell", "tools", "tutor", ]
 if !exists("g:ftplugin_dir")
+    exe "lcd ".fnameescape(expand('%:p:h'))
+    echom expand("%:p:h").';'
     let dir_path = ''
     for dir in s:vim_dirs
 	let dir_path = fnamemodify(finddir(dir, expand("%:p:h").';'), ':p')
@@ -42,24 +44,31 @@ if !exists("g:ftplugin_dir")
     else
 	let g:ftplugin_dir = expand("%:p:h")
     endif
+    lcd -
 endif
 fun! FTPDEV_GetInstallDir()
+    let time = reltime()
     " lcd to g:ftplugin_dir, we want path to be relative to this directory.
     exe 'lcd '.fnameescape(g:ftplugin_dir) 
     " Check only vim files:
     let files = map(filter(split(globpath('.', '**'), '\n'), 'fnamemodify(v:val, ":e") == "vim"'), 'v:val[2:]')
+    let g:files = copy(files)
     lcd -
     " Good files to check are those in s:vim_dirs:
     " i.e. in plugin, ftplugin, ... directories.
     let gfiles = []
+    let g:time1 = reltimestr(reltime(time))
     for file in files
 	if file =~ '^\%('.join(s:vim_dirs, '\|').'\)\>'
 	    call add(gfiles, file)
 	endif
     endfor
+    let g:files1 = copy(files)
+    let g:time2 = reltimestr(reltime(time))
     if len(gfiles)
 	let files = gfiles
     endif
+    let g:gfiles = copy(gfiles)
     " ipath - install path
     let ipath = ''
     for file in files
@@ -69,6 +78,7 @@ fun! FTPDEV_GetInstallDir()
 	    break
 	endif
     endfor
+    let g:time3 = reltimestr(reltime(time))
     " Get the install path, count the directory level of file and strip that
     " many directories from the corresponing ipath. This should be the install
     " path.
@@ -78,6 +88,7 @@ fun! FTPDEV_GetInstallDir()
 	let file = fnamemodify(file, ':h')
     endwhile
     let ipath = fnamemodify(ipath, repeat(':h', idx))
+    let g:time4 = reltimestr(reltime(time))
     return ipath
 endfun
 if !exists("g:ftplugin_installdir")
@@ -117,6 +128,7 @@ setl fileformats=unix,dos
 
 " FUNCTIONS AND COMMANDS AND MAPS:
 fun! <SID>PyGrep(what, files) " {{{1
+" XXX:  
 python << EOF
 import vim
 import re
@@ -145,8 +157,10 @@ for filename in files:
                 break
     else:
         buf_nr = 0
+	# XXX: filename might be a directory!
         with open(filename) as fo:
             buf = fo.read().splitlines()
+
     lnr = 0
     buf_len = len(buf)
     while lnr < buf_len:
@@ -464,8 +478,8 @@ fun! Search(Arg) "{{{1
 endfun "}}}1
 com! -buffer -nargs=*	S 	:call Search(<q-args>) | let v:searchforward = ( <SID>GetSearchArgs(<q-args>, 'bcenpswW')[1] =~# 'b' ? 0 : 1 )
 
-nmap <silent> <buffer> <C-N>				:call SearchInFunction(@/,'')<CR>
-nmap <silent> <buffer> <C-P> 				:call SearchInFunction(@/,'b')<CR>
+" nmap <silent> <buffer> <C-N>				:call SearchInFunction(@/,'')<CR>
+" nmap <silent> <buffer> <C-P> 				:call SearchInFunction(@/,'b')<CR>
 nmap <silent> <buffer> gn 				:call SearchInFunction(@/,( v:searchforward ? '' : 'b'))<CR>
 nmap <silent> <buffer> gN				:call SearchInFunction(@/,(!v:searchforward ? '' : 'b'))<CR>
 fun! <SID>PluginDir(...) "{{{1
