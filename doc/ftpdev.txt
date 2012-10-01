@@ -1,7 +1,7 @@
-*ftpdev.txt* 			For Vim version 7	Last change: 6 May 2011
+*ftpdev.txt* 			For Vim version 7	Last change: 27 IX 2012
 
 
-		    A help file for <F>ile <T>ype <P>lugin <DEV>elopemnt  (ver. 5.3)
+		    A help file for {F}ile {T}ype {P}lugin {DEV}elopemnt  (ver. 5.6)
 				by Marcin Szamotulski
 			    mszamot [AT] gmail [DOT] com
 			----------------------------------------
@@ -13,14 +13,39 @@ available commands and maps with some explanation:
 ======
 NEWS							*ftpdev-news*	
 >
- version 5.5
+ version 6
 <
- |ftpdev-:Function|, |ftpdev-:Command|, |ftpdev-:MapLhs|, |ftpdev-:MapRhs| and
- |ftpdev-:Variable| are using location list rather than the quick fix list.
- Use |:llist|, |:lne| and |:lp| vim commands.
+ The core functionality of |ftpdev-:Function|, |ftpdev-:Command|,
+ |ftpdev-:MapLhs| and |ftpdev-:MapRhs| was rewritten in Python. If your Vim
+ has Python interface (:echo has("+python")) then these commands will be much
+ faster.
 
- |ftpdev-:S| command is works well when the pattern contains |\v| (but not
- when it mixes |\m|, |\v|).
+ For |ftpdev-:MapLhs| and |ftpdev-:MapRhs| if your vim is compiled with Python
+ interface then the pattern matches can use '^' to match the begining of the
+ lhs or rhs of the map (the '<plug>' is not included in the lhs/rhs).
+
+ |g:ftplugin_dir| and |g:ftplugin_installdir| should work out of the box.
+ |g:ftplugin_installdir| will work if one file of the project is already
+ installed in the 'runtimepath' (and it is distinguished on under
+ 'runtimepath').
+
+ |ftpdev-:Install| will print where it puts files and will make missing
+ directories. It will exit silently if both  |g:ftplugin_dir| and
+ |g:ftplugin_installdir| are set to the same value. This is useful when you
+ set |ftpdev-:Install| through an autocommand and then edit files under the
+ 'runtimepath'.
+
+ You can folow development of this plugin on GitHub:
+ https://github.com/coot/vim_ftpdev
+
+ NEW FEATURE: ~
+
+ gd  - jump to local declaration: it finds the first declaration of the
+ variable under the cursor. The declaration is search in the current function
+ scope and outside all nested function definitions. Thus when you are outside
+ a function whole script is searched backward from the cursor position,
+ omitting all functions.
+
 >
  version 5.4
 <
@@ -29,11 +54,6 @@ NEWS							*ftpdev-news*
 
  :Edit, :Split, ... commands removed. Instead the |path| option is set so you
  can use |:find|, |:sfind|, ... commands.
-
->
- version 5.3
-<
- See |ftpdev-:Eval|.
 
 ======
 CONFIGURATION						*ftpdev-configure* 
@@ -62,7 +82,7 @@ in my vimrc file via an autocommand: >
 							*ftpdev-g:ftplugin_notinstall*
 g:ftplugin_notinstall=['Makefile', '.*\.tar\.\%(bz2\|gz\)$', '.*\.vba$']
 	This is list of patterns or file names relative to |g:ftplugin_dir|
-	which will not be installed by |ftpdev-:Install| command.
+	which will not be installed by the |ftpdev-:Install| command.
 
 							*ftpdev-g:ftplugin_installdir*
 g:ftplugin_installdir=split(&runtimepath,",")[0]
@@ -84,14 +104,15 @@ SEARCHING COMMANDS ~
 :Function[!] {fname} [line]				*ftpdev-:Function*
 	This finds function with name matching {fname} vim pattern under the
 	|ftpdev-g:ftplugin_dir| directory. It uses the internal grep, i.e.
-	|vimgrep|. {fname} should be as the first argument of |vimgrep| except
-	it doesn't have to be put between /.../ .
+	|lvimgrep|. {fname} should be as the first argument of |lvimgrep| except
+	it doesn't have to be put between /.../.
 
-	{fname} should not begin with <SID> or 's:' even if the function name has
-	it.
+	{fname} should not begin with <SID> or 's:' even if the function name
+	has it.
 
-	The bang vimgrep is supplied with the j switch, i.e. only quick fix
-	list will be filled with matches.
+	The bang is present |lvimgrep| is supplied with the j switch, i.e.
+	the location list will be filled with matches without jumping to the
+	first match.
 
 	There is a completion for {fname}s.
 
@@ -104,7 +125,7 @@ SEARCHING COMMANDS ~
 
 :Command[!] {cname} [line]				*ftpdev-:Command*
 	This finds command which name matches {fname} vim pattern under the
-	|ftpdev-g:ftplugin_dir| {cname> has the same syntax as {fname}. The
+	|ftpdev-g:ftplugin_dir| {cname} has the same syntax as {fname}. The
 	bang works as in |ftpdev-:Function|
 
 	There is a completion for {cname}s.
@@ -124,10 +145,24 @@ SEARCHING COMMANDS ~
 	|ftpdev-:Function|
 	The [line] argument is the same as in |ftpdev-:Function|.
 
+	If Vim has Python interface then you can use '^' in {maplhs} pattern
+	to match the start of the map name ('<plug> is not included into the
+	map name). If Vim has not Python interface the {maplhs} always matches
+	at the begining, thus if you want to match anywhere use '.*' at the
+	begining of {maplhs}
+
 :MapRhs[!] {maprhs} [line]				*ftpdev-:MapRhs*
 	This finds maps which rhs matches {maprhs} vim pattern. The bang works as in
 	|ftpdev-:Function|
 	The [line] argument is the same as in |ftpdev-:Function|.
+
+	{maprhs} works in the same way as {maplhs} argument of |atp-:MapLhs|
+	command (read there about the difference when Vim has Python
+	interface).
+
+	Note: [todo] some completions might not work (especially complex right
+	hand side maps, Goto function should check for == in this case).
+
 							*ftpdev-]#*
 							*ftpdev-[#*
 							*ftpdev-:S*
@@ -136,7 +171,8 @@ map ]#
 map [#
 	This function make a search of {pattern} in the current function (it
 	can wrap around the end of function. The argument {pattern} is a vim
-	pattern passed to |vimgrep|.
+	pattern passed to |vimgrep|. Mixing |\v| and |\m| in a pattern is not
+	supported.
 
 	The pattern is added to search history and copied to the @/ register,
 	thus you can re use it with |n| and |N| commands to search globally or
@@ -155,8 +191,8 @@ map [#
 
 							*ftpdev-:Pgrep*
 :Pgrep /{pattern}/[j][g]
-	This makes |vimgrep| in all files under |ftpdev-g:ftplugin_dir|.  The
-	argument syntax is the same as for |vimgrep|.
+	This makes |lvimgrep| in all files under |ftpdev-g:ftplugin_dir|.  The
+	argument syntax is the same as for |lvimgrep|.
 
 This note is just for completeness:
 Vim has its own vim.vim ftplugin which defines: 
@@ -173,8 +209,10 @@ nmap GN							*ftpdev-GN*
  nmap	Gn	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>')<CR>
  nmap	GN	:call searchpair('^[^"]*\<\zsif\>', '^[^"]*\<\zselse\%(if\)\=\>', '^[^"]*\<\zsendif\>', 'b')<CR>
 <	
+	You can also use the |matchit| plugin. Just configure |b:match_words|
+	variable.
 
-INSTALLING ~
+INSTALLING PLUGIN TO THE RUNTIME PATH ~
 
 :Install[!] 						*ftpdev-:Install*
 	Without bang "!": it will copy the current buffer to the location
@@ -185,31 +223,14 @@ INSTALLING ~
 
 	You can use this command in an autocommand for certain files: >
 		au BufWritePost <some_file>	:Install
+<
+	If a directory tree is missing |ftpdev-:Install| will make it on the
+	fly.
+
+	If |g:ftplugin_dir| and |g:ftplugin_installdir| are equal the command
+	silently returns. This is useful when you set :Install through an
+	autocommand and edit files under the 'runtimepath'.
 
 Happy vimming :)	
-
-================================================================================
-COPY RIGHTS						*ftpdev-copy-rights*
-
-
-    Copyright (C) 2010 Marcin Szamotulski Permission is hereby granted to use
-    and distribute this code, with or without modifications, provided that
-    this copyright notice is copied with it. 
-
-    FTPDEV filetype plugin for Vim is free software: you can redistribute it
-    and/or modify it under the terms of the GNU General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or (at your option) any later version.
- 
-    FTPDEV filetype plugin for Vim is distributed in the hope that it will be
-    useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-    Public License for more details.
- 
-    You should have received a copy of the GNU General Public License along
-    with FTPDEV filetype plugin for Vim.  If not, see <http://www.gnu.org/licenses/>.
-
-    This licence applies to all files shipped with FTPDEV filetype plugin.
-
 
 vim:tw=75:ts=8:ft=help:norl:ft=help

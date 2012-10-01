@@ -7,3 +7,6 @@ This file type plugin provides some additional tools which makes the life easier
     - Edit/Split/VSplit/Diffsplit commands with a handy completion for file names (support ++opt and +cmd options of vim edit command)
 
 There is a help file which explains all the details (:help ftpdev-news).
+
+You can follow or develop this plugin on GitHub:
+https://github.com/coot/vim_ftpdev
