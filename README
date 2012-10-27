@@ -2,6 +2,8 @@ This is a mirror of http://www.vim.org/scripts/script.php?script_id=3322
 
 This file type plugin provides some additional tools which makes the life easier when writing plugins which are big projects with many functions, commands and maps across different files which share a common root directory. It provides commands for
     - finding functions, commands, variable definitions and maps which name matches a pattern
+    - gD go to global declaration (an extremly fast way to move through code)
+    - gd  go to local declaration
     - searching a function which wrap around the end of function
     - Pgrep command which uses vimgrep to grep inside the plugin directory.
     - Edit/Split/VSplit/Diffsplit commands with a handy completion for file names (support ++opt and +cmd options of vim edit command)

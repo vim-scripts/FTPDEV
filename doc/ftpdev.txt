@@ -13,6 +13,33 @@ available commands and maps with some explanation:
 ======
 NEWS							*ftpdev-news*	
 >
+ version 6.2
+<
+ |ftpdev-[f| and |ftpdev-[l| motions, + some fixes of |ftpdev-gD| (works now
+ also in visual mode), and can jump to maps ("<plug>...."). Also |ftpdev-gd|
+ can be used in visual mode.
+
+ There are two autoload functions:
+ ftpdev#Install()
+ ftpdev#AutoInstall()
+ which can be used to install other files than VimL scripts, e.g. doc's or
+ perl, python, ... scripts.
+
+>
+ version 6.1
+<
+ |b:ftplugin_dir| and |b:ftplugin_installdir| instead of global variables. In
+ this way you can work in one vim instance with several vim plugins.
+
+ |g:ftplugin_noinstall| instead of g:ftplugin_notinstall 
+ (it just sounds better :)
+
+ NEW FEATURE: ~
+
+ |ftpdev-gD| - search for global definition under the cursor: this works with
+ variables, functions and commands.
+
+>
  version 6
 <
  The core functionality of |ftpdev-:Function|, |ftpdev-:Command|,
@@ -24,14 +51,14 @@ NEWS							*ftpdev-news*
  interface then the pattern matches can use '^' to match the begining of the
  lhs or rhs of the map (the '<plug>' is not included in the lhs/rhs).
 
- |g:ftplugin_dir| and |g:ftplugin_installdir| should work out of the box.
- |g:ftplugin_installdir| will work if one file of the project is already
+ |b:ftplugin_dir| and |b:ftplugin_installdir| should work out of the box.
+ |b:ftplugin_installdir| will work if one file of the project is already
  installed in the 'runtimepath' (and it is distinguished on under
  'runtimepath').
 
  |ftpdev-:Install| will print where it puts files and will make missing
- directories. It will exit silently if both  |g:ftplugin_dir| and
- |g:ftplugin_installdir| are set to the same value. This is useful when you
+ directories. It will exit silently if both  |b:ftplugin_dir| and
+ |b:ftplugin_installdir| are set to the same value. This is useful when you
  set |ftpdev-:Install| through an autocommand and then edit files under the
  'runtimepath'.
 
@@ -40,7 +67,7 @@ NEWS							*ftpdev-news*
 
  NEW FEATURE: ~
 
- gd  - jump to local declaration: it finds the first declaration of the
+ |ftpdev-gd|  - jump to local declaration: it finds the first declaration of the
  variable under the cursor. The declaration is search in the current function
  scope and outside all nested function definitions. Thus when you are outside
  a function whole script is searched backward from the cursor position,
@@ -58,9 +85,9 @@ NEWS							*ftpdev-news*
 ======
 CONFIGURATION						*ftpdev-configure* 
 
-							*ftpdev-g:ftplugin_dir*
+							*ftpdev-b:ftplugin_dir*
 There is one variable which needs to be configured >
- g:ftplugin_dir
+ b:ftplugin_dir
 < This is the directory which will be searched for files. If you set this to
 your ~/.vim/ftplugin directory where you have lots of scripts this plugin
 might be a bit slow. Each plugin that I develop has its own directory (you
@@ -70,22 +97,22 @@ in my vimrc file via an autocommand: >
 <
 							*ftpdev-:PluginDir*
 :PluginDir {dir}	
-	This sets value of the variable |ftpdev-g:ftplugin_dir| to {dir}. It
+	This sets value of the variable |ftpdev-b:ftplugin_dir| to {dir}. It
 	has dir type completion.
 
  							*ftpdev-g:ftplugin_ResetPath*
- |g:ftplugin_ResetPath| is set to 1 it will set |path|=g:ftplugin_dir, if not
- set or equal 0 it will add g:ftplugin_dir to |path| (only if the path already
+ |g:ftplugin_ResetPath| is set to 1 it will set |path|=b:ftplugin_dir, if not
+ set or equal 0 it will add b:ftplugin_dir to |path| (only if the path already
  does not contain it). 
  This makes the use of |edit|, |split|, |vsplit|, |diffsplit| a lot nicer.
 
-							*ftpdev-g:ftplugin_notinstall*
-g:ftplugin_notinstall=['Makefile', '.*\.tar\.\%(bz2\|gz\)$', '.*\.vba$']
-	This is list of patterns or file names relative to |g:ftplugin_dir|
+							*ftpdev-g:ftplugin_noinstall*
+g:ftplugin_noinstall=['Makefile', '.*\.tar\.\%(bz2\|gz\)$', '.*\.vba$']
+	This is list of patterns or file names relative to |b:ftplugin_dir|
 	which will not be installed by the |ftpdev-:Install| command.
 
-							*ftpdev-g:ftplugin_installdir*
-g:ftplugin_installdir=split(&runtimepath,",")[0]
+							*ftpdev-b:ftplugin_installdir*
+b:ftplugin_installdir=split(&runtimepath,",")[0]
 	Directory name where to |ftpdev-:Install| files.
 
 
@@ -101,9 +128,11 @@ TIP ~
 COMMANDS AND MAPS					*ftpdev*
 
 SEARCHING COMMANDS ~
-:Function[!] {fname} [line]				*ftpdev-:Function*
+							*ftpdev-:Function*
+:Function[!] {fname} [line]
+nmap gD {over-func-name}
 	This finds function with name matching {fname} vim pattern under the
-	|ftpdev-g:ftplugin_dir| directory. It uses the internal grep, i.e.
+	|ftpdev-b:ftplugin_dir| directory. It uses the internal grep, i.e.
 	|lvimgrep|. {fname} should be as the first argument of |lvimgrep| except
 	it doesn't have to be put between /.../.
 
@@ -120,29 +149,37 @@ SEARCHING COMMANDS ~
 	when you are debugging a script and you got en error in function
 	{fname} at line [line].
 
-:ListFunctions						 *ftpdev-:ListFunctions*
+							 *ftpdev-:ListFunctions*
+:ListFunctions
 	List functions in defined in the current buffer.
 
-:Command[!] {cname} [line]				*ftpdev-:Command*
+							 *ftpdev-:Command*
+:Command[!] {cname} [line]
+nmap gD {over-command-name}
 	This finds command which name matches {fname} vim pattern under the
-	|ftpdev-g:ftplugin_dir| {cname} has the same syntax as {fname}. The
-	bang works as in |ftpdev-:Function|
+	|ftpdev-b:ftplugin_dir| {cname} has the same syntax as {fname}. The
+	bang works as in |ftpdev-:Function|.
 
 	There is a completion for {cname}s.
 	The [line] argument is the same as in |ftpdev-:Function|.
 
-:ListCommands						*ftpdev-:ListCommands*
+							*ftpdev-:ListCommands*
+:ListCommands
 	List commands in defined in the current buffer.
 
-:Variable[!] {vname} [line]				*ftpdev-:Variable*
+							*ftpdev-:Variable*
+:Variable[!] {vname} [line]
+nmap gD {over-var-name}
 	This finds variable definition matching {vname}. {vname} has to contain
 	the g: b: s: t: prefix if the variable has it. The bang works as in
-	|ftpdev-:Function|
+	|ftpdev-:Function|.
 	The [line] argument is the same as in |ftpdev-:Function|.
 
-:MapLhs[!] {maplhs} [line]				*ftpdev-:MapLhs*
-	This finds maps which lhs matches {maplhs} vim pattern. The bang works as in
-	|ftpdev-:Function|
+							*ftpdev-:MapLhs*
+:MapLhs[!] {maplhs} [line]
+	This finds maps which lhs matches {maplhs} vim pattern. Can find
+	maps which are defined using |:execute|. The bang works as in
+	|ftpdev-:Function|.
 	The [line] argument is the same as in |ftpdev-:Function|.
 
 	If Vim has Python interface then you can use '^' in {maplhs} pattern
@@ -150,10 +187,10 @@ SEARCHING COMMANDS ~
 	map name). If Vim has not Python interface the {maplhs} always matches
 	at the begining, thus if you want to match anywhere use '.*' at the
 	begining of {maplhs}
-
-:MapRhs[!] {maprhs} [line]				*ftpdev-:MapRhs*
+							*ftpdev-:MapRhs*
+:MapRhs[!] {maprhs} [line]
 	This finds maps which rhs matches {maprhs} vim pattern. The bang works as in
-	|ftpdev-:Function|
+	|ftpdev-:Function|.
 	The [line] argument is the same as in |ftpdev-:Function|.
 
 	{maprhs} works in the same way as {maplhs} argument of |atp-:MapLhs|
@@ -162,6 +199,19 @@ SEARCHING COMMANDS ~
 
 	Note: [todo] some completions might not work (especially complex right
 	hand side maps, Goto function should check for == in this case).
+
+							*ftpdev-gd*
+nmap gd
+vmap gd
+	Jump to local definition of a variable under the cursor.
+	It is clever enought to omit nested function scopes.
+
+							*ftpdev-gD*
+nmap gD
+vmap gD
+	Jump to global definition of a variable, function, command or map (if
+	starts with <plug> under the cursor (using |ftpdev-:Variable|,
+	|ftpdev-:Function|, |ftpdev-:Command| or |ftpdef-:MapLhs| commands).
 
 							*ftpdev-]#*
 							*ftpdev-[#*
@@ -191,15 +241,23 @@ map [#
 
 							*ftpdev-:Pgrep*
 :Pgrep /{pattern}/[j][g]
-	This makes |lvimgrep| in all files under |ftpdev-g:ftplugin_dir|.  The
+	This makes |lvimgrep| in all files under |ftpdev-b:ftplugin_dir|.  The
 	argument syntax is the same as for |lvimgrep|.
 
-This note is just for completeness:
-Vim has its own vim.vim ftplugin which defines: 
-	]] 	(next beginning of a function), 
-	][ 	(next end of a function), 
-	[[ 	(previous beginning of a function), 
-	[] 	(previous end of a function).
+							*ftpdev-]]* *ftpdev-[[*
+							*ftpdev-][* *ftpdev-][*
+These are normal and visual maps:
+[count]]] 	next beginning of a function, 
+[count]][ 	next end of a function, 
+[count][[ 	previous beginning of a function, 
+[count][] 	previous end of a function.
+
+							*ftpdev-[f*
+[count][f	jump to [count] line of the current function.
+
+							*ftpdev-[l*
+[count][l	jump to [count] line of the current emebedded language
+		(|:lua|, |:perl|, |:python| and |:python3| (|:py3|) are supported).
 	
 nmap Gn							*ftpdev-Gn*
 nmap GN							*ftpdev-GN*
@@ -216,10 +274,10 @@ INSTALLING PLUGIN TO THE RUNTIME PATH ~
 
 :Install[!] 						*ftpdev-:Install*
 	Without bang "!": it will copy the current buffer to the location
-	under |g:ftplugin_installdir| be default it is first path that appear
+	under |b:ftplugin_installdir| be default it is first path that appear
 	in 'runtimepath' vim option.  With bang "!": it will install all the
-	files found under |g:ftplugin_dir| except the files in the
-	(file/pattern) list |g:ftplugin_notinstall|.
+	files found under |b:ftplugin_dir| except the files in the
+	(file/pattern) list |g:ftplugin_noinstall|.
 
 	You can use this command in an autocommand for certain files: >
 		au BufWritePost <some_file>	:Install
@@ -227,7 +285,7 @@ INSTALLING PLUGIN TO THE RUNTIME PATH ~
 	If a directory tree is missing |ftpdev-:Install| will make it on the
 	fly.
 
-	If |g:ftplugin_dir| and |g:ftplugin_installdir| are equal the command
+	If |b:ftplugin_dir| and |b:ftplugin_installdir| are equal the command
 	silently returns. This is useful when you set :Install through an
 	autocommand and edit files under the 'runtimepath'.
 
